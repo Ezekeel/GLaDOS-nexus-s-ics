@@ -172,7 +172,7 @@ extern void cpufreq_stats_reset(void);
 static int oc_value = 100;
 
 static unsigned long sleep_freq;
-static unsigned long original_fclk[] = {1000000, 800000, 800000, 800000, 800000};
+static unsigned long original_fclk[] = {1400000, 1200000, 1000000, 800000, 800000, 800000, 800000};
 
 static u32 apll_values[sizeof(original_fclk) / sizeof(unsigned long)];
 #endif
