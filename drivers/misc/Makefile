@@ -61,3 +61,4 @@ obj-$(CONFIG_BLX)		+= blx.o
 obj-$(CONFIG_GENERIC_BLN)	+= bln.o
 obj-$(CONFIG_BLD)		+= bld.o
 obj-$(CONFIG_TOUCH_WAKE)	+= touch_wake.o
+obj-$(CONFIG_LIVE_OC)		+= live_oc.o
