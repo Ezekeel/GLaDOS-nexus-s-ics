@@ -153,11 +153,11 @@ static void touchwake_touchoff(struct work_struct * touchoff_work)
 static void press_powerkey(struct work_struct * presspower_work)
 {
     input_event(powerkey_device, EV_KEY, KEY_POWER, 1);
-
+    input_event(powerkey_device, EV_SYN, 0, 0);
     msleep(presspower_delay);
 
     input_event(powerkey_device, EV_KEY, KEY_POWER, 0);
-
+    input_event(powerkey_device, EV_SYN, 0, 0);
     msleep(presspower_delay);
 
     mutex_unlock(&lock);
