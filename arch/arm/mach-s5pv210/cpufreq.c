@@ -214,7 +214,7 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 			  unsigned int relation)
 {
 	unsigned long reg;
-	unsigned int index, priv_index;
+	unsigned int index;
 	unsigned int pll_changing = 0;
 	unsigned int bus_speed_changing = 0;
 	unsigned int arm_volt, int_volt;
@@ -250,13 +250,6 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 	if (freqs.new == freqs.old)
 		goto out;
 
-	/* Finding current running level index */
-	if (cpufreq_frequency_table_target(policy, s5pv210_freq_table,
-					   freqs.old, relation, &priv_index)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
 	arm_volt = dvs_conf[index].arm_volt;
 	int_volt = dvs_conf[index].int_volt;
 
@@ -278,11 +271,11 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
 
 	/* Check if there need to change PLL */
-	if ((index <= L2) || (priv_index <= L2))
+	if ((index <= L2) || (freqs.old >= s5pv210_freq_table[L2].frequency))
 		pll_changing = 1;
 
 	/* Check if there need to change System bus clock */
-	if ((index == L6) || (priv_index == L6))
+	if ((index == L6) || (freqs.old == s5pv210_freq_table[L6].frequency))
 		bus_speed_changing = 1;
 
 	if (bus_speed_changing) {
