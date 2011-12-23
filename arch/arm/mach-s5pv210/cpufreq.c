@@ -179,17 +179,16 @@ static void s5pv210_set_refresh(enum s5pv210_dmc_port ch, unsigned long freq)
 	/* Find current DRAM frequency */
 	tmp = s5pv210_dram_conf[ch].freq;
 
-#ifdef CONFIG_LIVE_OC
-	do_div(tmp, (freq * oc_value) / 100);
-#else
 	do_div(tmp, freq);
-#endif
 
 	tmp1 = s5pv210_dram_conf[ch].refresh;
 
 	do_div(tmp1, tmp);
-
+#ifdef CONFIG_LIVE_OC
+	__raw_writel((tmp1 * oc_value) / 100, reg);
+#else
 	__raw_writel(tmp1, reg);
+#endif
 }
 
 int s5pv210_verify_speed(struct cpufreq_policy *policy)
