@@ -169,6 +169,8 @@ static u32 clkdiv_val[7][11] = {
 #ifdef CONFIG_LIVE_OC
 extern void cpufreq_stats_reset(void);
 
+static bool ocvalue_changed = false;
+
 static int oc_value = 100;
 
 static unsigned long sleep_freq;
@@ -200,17 +202,16 @@ static void s5pv210_set_refresh(enum s5pv210_dmc_port ch, unsigned long freq)
 	/* Find current DRAM frequency */
 	tmp = s5pv210_dram_conf[ch].freq;
 
-#ifdef CONFIG_LIVE_OC
-	do_div(tmp, (freq * oc_value) / 100);
-#else
 	do_div(tmp, freq);
-#endif
 
 	tmp1 = s5pv210_dram_conf[ch].refresh;
 
 	do_div(tmp1, tmp);
-
+#ifdef CONFIG_LIVE_OC
+	__raw_writel((tmp1 * oc_value) / 100, reg);
+#else
 	__raw_writel(tmp1, reg);
+#endif
 }
 
 int s5pv210_verify_speed(struct cpufreq_policy *policy)
@@ -297,6 +298,14 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 	/* Check if there need to change System bus clock */
 	if ((index == L6) || (freqs.old == s5pv210_freq_table[L6].frequency))
 		bus_speed_changing = 1;
+
+#ifdef CONFIG_LIVE_OC
+	if (ocvalue_changed) {
+		pll_changing = 1;
+		bus_speed_changing = 1;
+		ocvalue_changed = false;
+	}
+#endif
 
 	if (bus_speed_changing) {
 		/*
@@ -644,6 +653,8 @@ void liveoc_update(unsigned int oc_value)
     policy->user_policy.min = s5pv210_freq_table[index_min].frequency;
     policy->user_policy.max = s5pv210_freq_table[index_max].frequency;  
 
+    ocvalue_changed = true;
+
     mutex_unlock(&set_freq_lock);
 
     cpufreq_stats_reset();
@@ -832,8 +843,13 @@ static int s5pv210_cpufreq_reboot_notifier_event(struct notifier_block *this,
 {
 	int ret = 0;
 
+#ifdef CONFIG_LIVE_OC
+	ret = cpufreq_driver_target(cpufreq_cpu_get(0), sleep_freq,
+			DISABLE_FURTHER_CPUFREQ);
+#else
 	ret = cpufreq_driver_target(cpufreq_cpu_get(0), SLEEP_FREQ,
 			DISABLE_FURTHER_CPUFREQ);
+#endif
 	if (ret < 0)
 		return NOTIFY_BAD;
 
