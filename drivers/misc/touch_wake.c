@@ -27,7 +27,7 @@ static bool touch_disabled = false;
 
 static bool device_suspended = false;
 
-static bool powerkey_pressed = false;
+static bool timed_out = true;
 
 static unsigned int touchoff_delay = 45000;
 
@@ -49,7 +49,11 @@ static struct input_dev * powerkey_device;
 
 static struct wake_lock touchwake_wake_lock;
 
+static struct timeval last_powerkeypress;
+
 #define TOUCHWAKE_VERSION 1
+
+#define TIME_LONGPRESS 500
 
 static void touchwake_disable_touch(void)
 {
@@ -89,7 +93,7 @@ static void touchwake_early_suspend(struct early_suspend * h)
 	{
 	    if (touchoff_delay > 0)
 		{
-		    if (!powerkey_pressed)
+		    if (timed_out)
 			{
 			    wake_lock(&touchwake_wake_lock);
 
@@ -127,7 +131,7 @@ static void touchwake_late_resume(struct early_suspend * h)
 	    touchwake_enable_touch();
 	} 
 
-    powerkey_pressed = false;
+    timed_out = true;
 
     device_suspended = false;
 
@@ -254,13 +258,41 @@ static struct miscdevice touchwake_device =
 	.name = "touchwake",
     };
 
-void powerkey_press(void)
+void proximity_detected(void)
 {   
-    powerkey_pressed = true;
+    timed_out = false;
 
     return;
 }
-EXPORT_SYMBOL(powerkey_press);
+EXPORT_SYMBOL(proximity_detected);
+
+void powerkey_pressed(void)
+{   
+    do_gettimeofday(&last_powerkeypress);
+
+    return;
+}
+EXPORT_SYMBOL(powerkey_pressed);
+
+void powerkey_released(void)
+{   
+    struct timeval now;
+
+    int time_pressed;
+
+    do_gettimeofday(&now);
+
+    time_pressed = (now.tv_sec - last_powerkeypress.tv_sec) * MSEC_PER_SEC +
+	(now.tv_usec - last_powerkeypress.tv_usec) / USEC_PER_MSEC;
+
+    if (time_pressed < TIME_LONGPRESS)
+	{
+	    timed_out = false;
+	}
+
+    return;
+}
+EXPORT_SYMBOL(powerkey_released);
 
 void touch_press(void)
 {   
@@ -319,6 +351,8 @@ static int __init touchwake_control_init(void)
     register_early_suspend(&touchwake_suspend_data);
 
     wake_lock_init(&touchwake_wake_lock, WAKE_LOCK_SUSPEND, "touchwake_wake");
+
+    do_gettimeofday(&last_powerkeypress);
 
     return 0;
 }
