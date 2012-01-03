@@ -355,7 +355,7 @@ irqreturn_t gp2a_irq_handler(int irq, void *data)
 #ifdef CONFIG_TOUCH_WAKE
 	if (!val)
 	    {
-		powerkey_press();
+		proximity_detected();
 	    }
 #endif
 
