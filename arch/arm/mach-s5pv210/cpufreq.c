@@ -146,7 +146,7 @@ static u32 clkdiv_val[5][11] = {
 #ifdef CONFIG_LIVE_OC
 extern void cpufreq_stats_reset(void);
 
-static bool ocvalue_changed = false;
+static bool pllbus_changing = false;
 
 static int oc_value = 100;
 
@@ -284,10 +284,10 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 		bus_speed_changing = 1;
 
 #ifdef CONFIG_LIVE_OC
-	if (ocvalue_changed) {
+	if (pllbus_changing) {
 		pll_changing = 1;
 		bus_speed_changing = 1;
-		ocvalue_changed = false;
+		pllbus_changing = false;
 	}
 #endif
 
@@ -628,7 +628,7 @@ void liveoc_update(unsigned int oc_value)
     policy->user_policy.min = s5pv210_freq_table[index_min].frequency;
     policy->user_policy.max = s5pv210_freq_table[index_max].frequency;  
 
-    ocvalue_changed = true;
+    pllbus_changing = true;
 
     mutex_unlock(&set_freq_lock);
 
@@ -714,6 +714,8 @@ static int s5pv210_cpufreq_notifier_event(struct notifier_block *this,
 	case PM_POST_RESTORE:
 	case PM_POST_SUSPEND:
 #ifdef CONFIG_LIVE_OC
+		pllbus_changing = true;
+
 		cpufreq_driver_target(cpufreq_cpu_get(0), sleep_freq,
 				ENABLE_FURTHER_CPUFREQ);
 #else
