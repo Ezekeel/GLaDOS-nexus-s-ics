@@ -94,7 +94,11 @@ static struct clk *g3d_clock;
 static struct regulator *g3d_pd_regulator;
 
 #ifdef CONFIG_PVR_LIMIT_MINFREQ
+#ifdef CONFIG_LIVE_OC
+extern unsigned long get_gpuminfreq(void);
+#else
 #define MIN_CPU_KHZ_FREQ 200000
+#endif
 
 static int limit_adjust_cpufreq_notifier(struct notifier_block *nb,
 					 unsigned long event, void *data)
@@ -106,8 +110,13 @@ static int limit_adjust_cpufreq_notifier(struct notifier_block *nb,
 
 	/* This is our indicator of GPU activity */
 	if (regulator_is_enabled(g3d_pd_regulator))
+#ifdef CONFIG_LIVE_OC
+		cpufreq_verify_within_limits(policy, get_gpuminfreq(),
+					     policy->cpuinfo.max_freq);
+#else
 		cpufreq_verify_within_limits(policy, MIN_CPU_KHZ_FREQ,
 					     policy->cpuinfo.max_freq);
+#endif
 
 	return 0;
 }
