@@ -632,7 +632,9 @@ void liveoc_update(unsigned int oc_value)
 
     mutex_unlock(&set_freq_lock);
 
+#ifdef CONFIG_CPU_FREQ_STAT
     cpufreq_stats_reset();
+#endif
 
     return;
 }
