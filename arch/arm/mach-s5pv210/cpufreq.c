@@ -657,11 +657,19 @@ void liveoc_update(unsigned int oc_value)
 
     mutex_unlock(&set_freq_lock);
 
+#ifdef CONFIG_CPU_FREQ_STAT
     cpufreq_stats_reset();
+#endif
 
     return;
 }
 EXPORT_SYMBOL(liveoc_update);
+
+unsigned long get_gpuminfreq(void)
+{
+    return s5pv210_freq_table[L5].frequency;
+}
+EXPORT_SYMBOL(get_gpuminfreq);
 #endif
 
 #ifdef CONFIG_CUSTOM_VOLTAGE
